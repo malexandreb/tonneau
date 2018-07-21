@@ -63,7 +63,19 @@ void setup(){
 }
 
 void loop(){
-  
+  //behavior simply depends of the state on a Moore state machine
+  //this is a simple enough controller, and that makes valitation easier
+  switch(mooreState){
+    case 0: nodeIdle(); break;
+    case 1: nodeCheckLevel(); break;
+    case 2: nodeDisabled(); break;
+    default: //should never reach this state
+      while(true){
+        ledSet(2,2,0,0);
+        errorBeep();
+        del(5000);
+      }
+  }
 }
 
 ///////////////////////////
@@ -84,19 +96,19 @@ void nodeStart(){
   mooreState = 0; //set state machine to idle state
 }
 
-//idle, monitors buttons, waits for cooldown timer to expire
+//STATE 0: idle, monitors buttons, waits for cooldown timer to expire
 void nodeIdle(){
   ledSet(0,1,0,0);
   while(cooldownTimer > 0){
     cooldownTimer--;
     if(buttonPressed()){
       if(buttonDisable()){
-        mooreState = 2;
+        mooreState = 7; // to disabled state
         buttonClear();
         return;
       }
       if(buttonForce()){
-        mooreState = 1;
+        mooreState = 1; //to check level state
         ledSet(0,0,1,0); //force is solid green
         buttonClear();
         return;
@@ -108,8 +120,18 @@ void nodeIdle(){
   }
   //time up, going to next state
   ledSet(0,0,2,0); //timeout is blinking green
-  mooreState = 1;
+  mooreState = 1; // to check level state
   return;
+}
+
+//STATE 1, check level and wait for water to drop if level is up
+void nodeCheckLevel(){
+  
+}
+
+//STATE 7, autoFill disabled until disable button pressed again.
+void nodeDisabled(){
+  
 }
 
 ////////////////////////////
