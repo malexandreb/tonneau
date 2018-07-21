@@ -182,8 +182,11 @@ void nodeFilling() {
 //STATE 4, done filling, tank full event detected, closing the valve
 void nodeCloseValve() {
   ledSet(2,0,0,1);
+  actionBeep();
   del(10000); //make sure the floater is floating
+  closeValve();
   //go to state 5 after valve is closed
+  mooreState = 5;
 }
 
 //STATE 5, fill process done, resetting the cooldown timer and back to idle state
