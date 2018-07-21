@@ -18,7 +18,8 @@
 //parameters
 /////////////
 int intervall = 60*60*6; //triggers automatically at most every 6h (defined in seconds)
-
+int openingTime = 2500;
+int closingTime = 2550;
 
 //pin definition
 ////////////////
@@ -38,6 +39,7 @@ unsigned int buzzerPin = A2;
 //convenient global variable
 unsigned int ledState[]={0,0,1,0}; // 0 = off, 1 = on, 2 = blink
 unsigned int ledPin[]={redLedPin, orangeLedPin, greenLedPin, blueLedPin};
+unsigned int buttonState[] = {0,0,0};
 
 void setup(){
   pinMode(levelFloaterPin, INPUT_PULLUP);
@@ -58,6 +60,7 @@ void loop(){
   
 }
 
+//DELAY//
 //replacing busy wait with something more usefull
 void del(unsigned long ms){
  unsigned long previousMillis = millis();
@@ -66,9 +69,34 @@ void del(unsigned long ms){
   currentMillis = millis();
   //put monitoring code here
   showLed();
+  getButtonState();
  } 
 }
 
+//MOTOR//
+/////////
+
+void openValve(){
+  //make green and blue led blink
+  ledSet(0,0,2,2);
+  del(1000);
+  actionBeep();
+  del(1000);
+  digitalWrite(motorOpenPin, HIGH);
+  del(openingTime);
+  digitalWrite(motorOpenPin, LOW);
+}
+
+void closeValve(){
+  //make red and blue led blink
+  ledSet(2,0,0,2);
+  del(1000);
+  actionBeep();
+  del(1000);
+  digitalWrite(motorClosePin, HIGH);
+  del(closingTime);
+  digitalWrite(motorClosePin, LOW);
+}
 
 /////LED////
 ////////////
@@ -102,14 +130,19 @@ boolean blinkState(){
 //returns 2 if spritz button pressed
 //returns 3 if force button pressed
 //lowest button number has priority if multiple button pressed
-int buttonState(){
-  if(digitalRead(buttonDisablePin) == LOW)
+int getButtonState(){
+  if(digitalRead(buttonDisablePin) == LOW){
+    buttonState[0] = 1;
     return 1;
-  if(digitalRead(buttonSpritzPin) == LOW)
+  }
+  if(digitalRead(buttonSpritzPin) == LOW){
+    buttonState[1] = 1;
     return 2;
-  if(digitalRead(buttonForcePin) == LOW)
-    return 3;
-    
+  }
+  if(digitalRead(buttonForcePin) == LOW){
+    buttonState[2] = 1;
+    return 3; 
+  } 
   return 0;
 }
 
@@ -122,3 +155,11 @@ void buttonBeep(){
   }
 }
 
+void actionBeep(){
+  for(int i = 0; i<10; i++){
+    digitalWrite(buzzerPin, HIGH); 
+    delay(2);
+    digitalWrite(buzzerPin, LOW);
+    delay(2);
+  }
+}
