@@ -17,9 +17,9 @@
 
 //parameters
 /////////////
-int intervall = 60*60*6; //triggers automatically at most every 6h (defined in seconds)
-int openingTime = 2500;
-int closingTime = 2550;
+int cooldownDelay = 60*60*6; // in sec, triggers automatically at most every 6h (defined in seconds)
+int openingTime = 2500; //in ms
+int closingTime = 2550; //in ms
 
 //pin definition
 ////////////////
@@ -39,7 +39,9 @@ unsigned int buzzerPin = A2;
 //convenient global variable
 unsigned int ledState[]={0,0,1,0}; // 0 = off, 1 = on, 2 = blink
 unsigned int ledPin[]={redLedPin, orangeLedPin, greenLedPin, blueLedPin};
-unsigned int buttonState[] = {0,0,0};
+unsigned int buttonState[] = {0,0,0}; // 0 = no press, 1=pressed
+unsigned int floaterState[] = {1,0}; //1=water, 0=no water
+int mooreState = 0;
 
 void setup(){
   pinMode(levelFloaterPin, INPUT_PULLUP);
@@ -54,11 +56,43 @@ void setup(){
   pinMode(greenLedPin, OUTPUT);
   pinMode(blueLedPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
+  
+  nodeStart();
+  
 }
 
 void loop(){
   
 }
+
+///////////////////////////
+///// STATE FUNCTIONS /////
+///////////////////////////
+//refer to state diagram for each state function
+
+//simple node, just used once at the very beginning
+void nodeStart(){
+  //start test procedure
+  ledSet(2,2,2,2);
+  for(int i = 0; i<4; i++){
+    del(1000);
+    buttonBeep();
+  }
+  ledSet(0,0,0,0);
+  cooldownTimer = cooldownDelay;
+  mooreState = 0; //set state machine to idle state
+}
+
+//idle, monitors buttons, waits for cooldown timer to expire
+void nodeIdle(){
+  if(buttonPressed){
+    if
+  }
+}
+
+////////////////////////////
+///// HELPER FUNCTIONS /////
+////////////////////////////
 
 //DELAY//
 //replacing busy wait with something more usefull
@@ -116,6 +150,7 @@ void ledSet(int red, int orange, int green, int blue){
   ledState[1]=orange;
   ledState[2]=green;
   ledState[3]=blue;
+  showLed();
 }
 
 boolean blinkState(){
@@ -133,19 +168,46 @@ boolean blinkState(){
 int getButtonState(){
   if(digitalRead(buttonDisablePin) == LOW){
     buttonState[0] = 1;
+    buttonBeep();
     return 1;
   }
   if(digitalRead(buttonSpritzPin) == LOW){
     buttonState[1] = 1;
+    buttonBeep();
     return 2;
   }
   if(digitalRead(buttonForcePin) == LOW){
     buttonState[2] = 1;
+    buttonBeep();
     return 3; 
   } 
   return 0;
 }
 
+//returns true if any of the button has been pressed
+boolean buttonPressed(){
+  return buttonState[0] + buttonState[1] + buttonState[2];
+}
+
+boolean buttonDisable(){
+  return buttonState[0]; 
+}
+boolean buttonSpritz(){
+  return buttonState[1];
+}
+boolean buttonForce(){
+  return buttonState[2];
+}
+
+//resets all buttons to unpressed state
+void buttonClear(){
+  buttonState[0] = 0;
+  buttonState[1] = 0;
+  buttonState[2] = 0;
+}
+void buttonCleared
+//Buzzer//
+//////////
 void buttonBeep(){
   for(int i = 0; i<2; i++){
     digitalWrite(buzzerPin, HIGH); 
@@ -155,11 +217,20 @@ void buttonBeep(){
   }
 }
 
+void errorBeep(){
+  for(int i = 0; i<2; i++){
+    digitalWrite(buzzerPin, HIGH); 
+    del(300);
+    digitalWrite(buzzerPin, LOW);
+    del(100);
+  }
+}
+
 void actionBeep(){
   for(int i = 0; i<10; i++){
     digitalWrite(buzzerPin, HIGH); 
     delay(2);
     digitalWrite(buzzerPin, LOW);
-    delay(2);
+    del(20);
   }
 }
