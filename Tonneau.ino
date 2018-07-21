@@ -83,6 +83,7 @@ void loop() {
         del(5000);
       }
   }
+  buttonClear();
 }
 
 ///////////////////////////
@@ -116,7 +117,6 @@ void nodeIdle() {
       }
       if (buttonForce()) {
         mooreState = 1; //to check level state
-        ledSet(0, 0, 1, 0); //force is solid green
         buttonClear();
         return;
       }
@@ -127,15 +127,13 @@ void nodeIdle() {
     del(1000);
   }
   //time up, going to next state
-  ledSet(0, 0, 2, 0); //timeout is blinking green
   mooreState = 1; // to check level state
   return;
 }
 
 //STATE 1, check level and wait for water to drop if level is up
 void nodeCheckLevel() {
-  //ledSet taken care by the previous state
-
+  ledSet(0,0,1,0);
   //stay in state 1 if level is high
   //go to state 2 if level is low
   if (!tankFull()) {
@@ -167,7 +165,7 @@ void nodeOpenValve() {
 
 //STATE 3, filling, valve is open, monitoring floater
 void nodeFilling() {
-  ledSet(0,0,0,1);
+  ledSet(0, 0, 0, 1);
   //stay in state 3 if level is low
   //go to state 4 if level is high
   if (tankFull()) {
@@ -181,7 +179,7 @@ void nodeFilling() {
 
 //STATE 4, done filling, tank full event detected, closing the valve
 void nodeCloseValve() {
-  ledSet(2,0,0,1);
+  ledSet(2, 0, 0, 1);
   actionBeep();
   del(10000); //make sure the floater is floating
   closeValve();
@@ -197,40 +195,53 @@ void nodeResetTimer() {
 
 //STATE 6, disable button pressed during fill, closing valve and going to disable mode
 void nodeCloseToDisable() {
-  //go to state 7 after valve is closed
+  //same as state 4 but go to state 7 after valve is closed
+  ledSet(2, 1, 0, 1);
+  actionBeep();
+  del(1000); //make sure the floater is floating
+  closeValve();
+  //go to state 5 after valve is closed
+  mooreState = 5;
 }
 
 //STATE 7, autoFill disabled until disable button pressed again.
 void nodeDisabled() {
   ledSet(1, 0, 0, 0); //set led
-  //infinite loop here
-  while (true) {
-    if (buttonPressed()) {
-      if (buttonForce()) {
-        mooreState = 1; // to check level state
-        buttonClear();
-        return;
-      }
-      if (buttonSpritz()) {
-        mooreState = 8; //go to spritz open
-        buttonClear();
-        return;
-      }
-      //disable does nothing here
-      errorBeep();
+  if (buttonPressed()) {
+    if (buttonForce()) {
+      mooreState = 1; // to check level state
       buttonClear();
+      return;
     }
-    del(1000);
+    if (buttonSpritz()) {
+      mooreState = 8; //go to spritz open
+      buttonClear();
+      return;
+    }
+    //disable does nothing here
+    errorBeep();
+    buttonClear();
   }
+  del(1000);
 }
 
 //STATE 8, partial open of the valve to give a little bit of water during tank maintenance
 void nodeSpritzOpen() {
+  actionBeep();
+  ledSet(0, 2, 2, 0);
+  del(1000); // wait for 10 sec for things to stabilize
+  openValve();
+  mooreState = 9; //go to state 3 after valve is opened
   //go to state 9 after partial open of valve
 }
 
 //STATE 9, closing vlave after partial open
 void nodeSpritzClose() {
+  ledSet(0,2,1,0);
+  actionBeep();
+  del(10000); //10 sec spritz
+  closeValve();
+  mooreState = 7;
   //go to state 7 after partial close of valve
 }
 
