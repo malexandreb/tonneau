@@ -41,7 +41,7 @@ unsigned int ledState[]={0,0,1,0}; // 0 = off, 1 = on, 2 = blink
 unsigned int ledPin[]={redLedPin, orangeLedPin, greenLedPin, blueLedPin};
 unsigned int buttonState[] = {0,0,0}; // 0 = no press, 1=pressed
 unsigned int floaterState[] = {1,0}; //1=water, 0=no water
-int mooreState = 0;
+int mooreState = 10;
 int cooldownTimer;
 
 void setup(){
@@ -68,7 +68,14 @@ void loop(){
   switch(mooreState){
     case 0: nodeIdle(); break;
     case 1: nodeCheckLevel(); break;
-    case 2: nodeDisabled(); break;
+    case 2: nodeOpenValve();break;
+    case 3: nodeFilling();break;
+    case 4: nodeCloseValve();break;
+    case 5: nodeResetTimer();break;
+    case 6: nodeCloseToDisable();break;
+    case 7: nodeDisabled(); break;
+    case 8: nodeSpritzOpen();break;
+    case 9: nodeSpritzClose();break;
     default: //should never reach this state
       while(true){
         ledSet(2,2,0,0);
@@ -129,10 +136,46 @@ void nodeCheckLevel(){
   
 }
 
+//STATE 2, open the valve
+void nodeOpenValve(){
+  
+}
+
+//STATE 3, filling, valve is open, monitoring floater
+void nodeFilling(){
+  
+}
+
+//STATE 4, done filling, tank full event detected, closing the valve
+void nodeCloseValve(){
+  
+}
+
+//STATE 5, fill process done, resetting the cooldown timer and back to idle state
+void nodeResetTimer(){
+  
+}
+
+//STATE 6, disable button pressed during fill, closing valve and going to disable mode
+void nodeCloseToDisable(){
+  
+}
+
 //STATE 7, autoFill disabled until disable button pressed again.
 void nodeDisabled(){
   
 }
+
+//STATE 8, partial open of the valve to give a little bit of water during tank maintenance
+void nodeSpritzOpen(){
+  
+}
+
+//STATE 9, closing vlave after partial open
+void nodeSpritzClose(){
+  
+}
+
 
 ////////////////////////////
 ///// HELPER FUNCTIONS /////
