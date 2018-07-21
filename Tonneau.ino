@@ -42,6 +42,7 @@ unsigned int ledPin[]={redLedPin, orangeLedPin, greenLedPin, blueLedPin};
 unsigned int buttonState[] = {0,0,0}; // 0 = no press, 1=pressed
 unsigned int floaterState[] = {1,0}; //1=water, 0=no water
 int mooreState = 0;
+int cooldownTimer;
 
 void setup(){
   pinMode(levelFloaterPin, INPUT_PULLUP);
@@ -85,9 +86,30 @@ void nodeStart(){
 
 //idle, monitors buttons, waits for cooldown timer to expire
 void nodeIdle(){
-  if(buttonPressed){
-    if
+  ledSet(0,1,0,0);
+  while(cooldownTimer > 0){
+    cooldownTimer--;
+    if(buttonPressed()){
+      if(buttonDisable()){
+        mooreState = 2;
+        buttonClear();
+        return;
+      }
+      if(buttonForce()){
+        mooreState = 1;
+        ledSet(0,0,1,0); //force is solid green
+        buttonClear();
+        return;
+      }
+      //spritz does nothing here
+      errorBeep();
+    }
+    del(1000);
   }
+  //time up, going to next state
+  ledSet(0,0,2,0); //timeout is blinking green
+  mooreState = 1;
+  return;
 }
 
 ////////////////////////////
@@ -205,7 +227,7 @@ void buttonClear(){
   buttonState[1] = 0;
   buttonState[2] = 0;
 }
-void buttonCleared
+
 //Buzzer//
 //////////
 void buttonBeep(){
