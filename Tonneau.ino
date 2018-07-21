@@ -134,25 +134,55 @@ void nodeIdle() {
 
 //STATE 1, check level and wait for water to drop if level is up
 void nodeCheckLevel() {
-  //return to state 1 if level is high
+  //ledSet taken care by the previous state
+
+  //stay in state 1 if level is high
   //go to state 2 if level is low
+  if (!tankFull()) {
+    mooreState = 2;
+  }
+
   //go to state 7 if disable button is pressed
+  if (buttonPressed()) {
+    if (buttonDisable()) {
+      mooreState = 7;
+      buttonClear();
+      return;
+    }
+    errorBeep(); //force and spritz make no sense here
+    buttonClear();
+  }
+
+  del(1000);
 }
 
 //STATE 2, open the valve
 void nodeOpenValve() {
-  //go to state 3 after valve is opened
+  actionBeep();
+  ledSet(0, 0, 2, 1);
+  del(10000); // wait for 10 sec for things to stabilize
+  openValve();
+  mooreState = 3; //go to state 3 after valve is opened
 }
 
 //STATE 3, filling, valve is open, monitoring floater
 void nodeFilling() {
-  //return to state 3 if level is low
+  ledSet(0,0,0,1);
+  //stay in state 3 if level is low
   //go to state 4 if level is high
+  if (tankFull()) {
+    del(10000); //splash guard
+    if (tankFull()) {
+      mooreState = 4; //close the valve since it is full
+    }
+  }
   //go to state 6 if disable button is pressed
 }
 
 //STATE 4, done filling, tank full event detected, closing the valve
 void nodeCloseValve() {
+  ledSet(2,0,0,1);
+  del(10000); //make sure the floater is floating
   //go to state 5 after valve is closed
 }
 
@@ -169,7 +199,7 @@ void nodeCloseToDisable() {
 
 //STATE 7, autoFill disabled until disable button pressed again.
 void nodeDisabled() {
-  ledSet(1,0,0,0); //set led
+  ledSet(1, 0, 0, 0); //set led
   //infinite loop here
   while (true) {
     if (buttonPressed()) {
