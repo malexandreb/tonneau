@@ -18,8 +18,8 @@
 //parameters
 /////////////
 int cooldownDelay = 60 * 60 * 6; // in sec, triggers automatically at most every 6h (defined in seconds)
-int openingTime = 2500; //in ms
-int closingTime = 2550; //in ms
+int openingTime = 3000; //in ms
+int closingTime = 3050; //in ms
 
 //pin definition
 ////////////////
@@ -83,7 +83,7 @@ void loop() {
         del(5000);
       }
   }
-  buttonClear();
+  //buttonClear(); not a good idea
 }
 
 ///////////////////////////
@@ -133,7 +133,7 @@ void nodeIdle() {
 
 //STATE 1, check level and wait for water to drop if level is up
 void nodeCheckLevel() {
-  ledSet(0,0,1,0);
+  ledSet(0, 0, 1, 0);
   //stay in state 1 if level is high
   //go to state 2 if level is low
   if (!tankFull()) {
@@ -175,6 +175,16 @@ void nodeFilling() {
     }
   }
   //go to state 6 if disable button is pressed
+  if (buttonPressed()) {
+    if (buttonDisable()) {
+      mooreState = 6;
+      buttonClear();
+      return;
+    }
+    errorBeep();
+    buttonClear();
+  }
+  del(100);
 }
 
 //STATE 4, done filling, tank full event detected, closing the valve
@@ -200,8 +210,8 @@ void nodeCloseToDisable() {
   actionBeep();
   del(1000); //make sure the floater is floating
   closeValve();
-  //go to state 5 after valve is closed
-  mooreState = 5;
+  //go to state 7 (disabled) after valve is closed
+  mooreState = 7;
 }
 
 //STATE 7, autoFill disabled until disable button pressed again.
@@ -237,7 +247,7 @@ void nodeSpritzOpen() {
 
 //STATE 9, closing vlave after partial open
 void nodeSpritzClose() {
-  ledSet(0,2,1,0);
+  ledSet(0, 2, 1, 0);
   actionBeep();
   del(10000); //10 sec spritz
   closeValve();
@@ -360,6 +370,7 @@ void buttonClear() {
   buttonState[0] = 0;
   buttonState[1] = 0;
   buttonState[2] = 0;
+  delay(100);
 }
 
 //Buzzer//
