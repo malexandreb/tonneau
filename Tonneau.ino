@@ -66,16 +66,17 @@ void loop() {
   //behavior simply depends of the state on a Moore state machine
   //this is a simple enough controller, and that makes valitation easier
   switch (mooreState) {
-    case 0: nodeIdle(); break;
-    case 1: nodeCheckLevel(); break;
-    case 2: nodeOpenValve(); break;
-    case 3: nodeFilling(); break;
-    case 4: nodeCloseValve(); break;
-    case 5: nodeResetTimer(); break;
-    case 6: nodeCloseToDisable(); break;
-    case 7: nodeDisabled(); break;
-    case 8: nodeSpritzOpen(); break;
-    case 9: nodeSpritzClose(); break;
+    case 0:  nodeIdle();           break;
+    case 1:  nodeCheckLevel();     break;
+    case 2:  nodeOpenValve();      break;
+    case 3:  nodeFilling();        break;
+    case 4:  nodeCloseValve();     break;
+    case 5:  nodeResetTimer();     break;
+    case 6:  nodeCloseToDisable(); break;
+    case 7:  nodeDisabled();       break;
+    case 8:  nodeSpritzOpen();     break;
+    case 9:  nodeSpritzClose();    break;
+    case 10: nodeAdjustment();       break;
     default: //should never reach this state
       while (true) {
         ledSet(2, 2, 0, 0);
@@ -101,7 +102,15 @@ void nodeStart() {
   }
   ledSet(0, 0, 0, 0);
   cooldownTimer = cooldownDelay;
-  mooreState = 0; //set state machine to idle state
+
+  //check for adjustment request == all 3 buttons have been pressed during blinking led time
+  if (buttonDisable() && buttonSpritz() && buttonForce()) {
+    mooreState = 10;
+  }
+  else {
+    mooreState = 0; //set state machine to idle state
+  }
+  buttonClear();
 }
 
 //STATE 0: idle, monitors buttons, waits for cooldown timer to expire
@@ -161,6 +170,7 @@ void nodeOpenValve() {
   del(10000); // wait for 10 sec for things to stabilize
   openValve();
   mooreState = 3; //go to state 3 after valve is opened
+  buttonClear();
 }
 
 //STATE 3, filling, valve is open, monitoring floater
@@ -253,6 +263,26 @@ void nodeSpritzClose() {
   closeValve();
   mooreState = 7;
   //go to state 7 after partial close of valve
+}
+
+//STATE 10, adjustment of the motor, useful during setup or to correct a fault
+void nodeAdjustment() {
+  ledSet(0, 2, 2, 0);
+  del(20);
+  if (buttonForce()) { //open
+    digitalWrite(motorOpenPin, HIGH);
+    del(20);
+    digitalWrite(motorOpenPin, LOW);
+  }
+  if (buttonSpritz()) { //close
+    digitalWrite(motorClosePin, HIGH);
+    del(20);
+    digitalWrite(motorClosePin, LOW);
+  }
+  if(buttonDisable()){ //resume normal operation
+    mooreState = 0;
+  }
+  buttonClear();
 }
 
 
