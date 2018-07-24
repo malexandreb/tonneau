@@ -17,9 +17,9 @@
 
 //parameters
 /////////////
-int cooldownDelay = 60 * 60 * 6; // in sec, triggers automatically at most every 6h (defined in seconds)
-int openingTime = 3000; //in ms
-int closingTime = 3050; //in ms
+int cooldownDelay = 60 * 60 * 4; // in sec, triggers automatically at most every 4h (defined in seconds)
+int openingTime = 5500; //in ms
+int closingTime = 5800; //in ms
 
 //pin definition
 ////////////////
@@ -37,8 +37,8 @@ unsigned int blueLedPin = 4;
 unsigned int buzzerPin = A2;
 
 //convenient global variable
-unsigned int ledState[] = {0, 0, 1, 0}; // 0 = off, 1 = on, 2 = blink
-unsigned int ledPin[] = {redLedPin, orangeLedPin, greenLedPin, blueLedPin};
+unsigned int ledState[] = {0, 0, 1, 0, 2}; // 0 = off, 1 = on, 2 = blink
+unsigned int ledPin[] = {redLedPin, orangeLedPin, greenLedPin, blueLedPin, LED_BUILTIN};
 unsigned int buttonState[] = {0, 0, 0}; // 0 = no press, 1=pressed
 unsigned int floaterState[] = {1, 0}; //1=water, 0=no water
 int mooreState;
@@ -279,7 +279,7 @@ void nodeAdjustment() {
     del(20);
     digitalWrite(motorClosePin, LOW);
   }
-  if(buttonDisable()){ //resume normal operation
+  if (buttonDisable()) { //resume normal operation
     mooreState = 0;
   }
   buttonClear();
@@ -289,6 +289,9 @@ void nodeAdjustment() {
 ////////////////////////////
 ///// HELPER FUNCTIONS /////
 ////////////////////////////
+
+//reset
+void(* resetFunc) (void) = 0;//declare reset function at address 0
 
 //DELAY//
 //replacing busy wait with something more usefull
@@ -300,6 +303,33 @@ void del(unsigned long ms) {
     //put monitoring code here
     showLed();
     getButtonState();
+    //check for overflow
+    if (tankOverfullWarning()) {
+      buttonClear();
+      emergencyCloseValve();
+      ledSet(1, 1, 0, 2);
+      while (true) {
+        showLed();
+        digitalWrite(buzzerPin, HIGH);
+        delay(200); showLed(); getButtonState();
+        delay(200); showLed(); getButtonState();
+        delay(200); showLed(); getButtonState();
+        delay(200); showLed(); getButtonState();
+        digitalWrite(buzzerPin, LOW);
+        delay(200); showLed(); getButtonState();
+        if (buttonPressed()) {
+          ledSet(1, 1, 2, 2);
+          while(tankOverfullWarning()){ //wait for overflow condition to go away
+            showLed();
+            delay(100);
+          }
+          buttonClear();
+          mooreState = 0;
+          resetFunc();
+          return;
+        }
+      }
+    }
   }
 }
 
@@ -328,10 +358,19 @@ void closeValve() {
   digitalWrite(motorClosePin, LOW);
 }
 
+void emergencyCloseValve() {
+  //make red and blue led blink
+  ledSet(2, 0, 0, 2);
+  showLed();
+  digitalWrite(motorClosePin, HIGH);
+  delay(closingTime);
+  digitalWrite(motorClosePin, LOW);
+}
+
 /////LED////
 ////////////
 void showLed() {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     switch (ledState[i]) {
       case 0 : digitalWrite(ledPin[i], LOW); break;
       case 1 : digitalWrite(ledPin[i], HIGH); break;
@@ -442,5 +481,5 @@ boolean tankFull() {
 
 //retun true if overfill sensor triggered
 boolean tankOverfullWarning() {
-  return digitalRead(warningFloaterPin) == HIGH;
+  return digitalRead(warningFloaterPin) == LOW; //inverted floater
 }
