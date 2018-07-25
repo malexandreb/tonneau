@@ -15,6 +15,9 @@
 // blue = refilling
 //1 buzzer for water too high alert and button press feedback
 
+#include <EEPROM.h>
+#include "EEPROMAnything.h"
+
 //parameters
 /////////////
 int cooldownDelay = 60 * 60 * 4; // in sec, triggers automatically at most every 4h (defined in seconds)
@@ -44,6 +47,14 @@ unsigned int floaterState[] = {1, 0}; //1=water, 0=no water
 int mooreState;
 int cooldownTimer;
 
+//stat keeping
+int uptimeLoc = 0;
+int opentimeLoc = 32;
+int openCountLoc = 64;
+int closeCountLoc = 72;
+unsigned long uptimeCheck = 0;
+unsigned long opentimeCheck = 0;
+
 void setup() {
   pinMode(levelFloaterPin, INPUT_PULLUP);
   pinMode(warningFloaterPin, INPUT_PULLUP);
@@ -57,6 +68,21 @@ void setup() {
   pinMode(greenLedPin, OUTPUT);
   pinMode(blueLedPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
+
+  //read and display values in eeprom
+  unsigned long uptime, opentime;
+  int openCount, closeCount;
+
+  EEPROM_readAnything(uptimeLoc, uptime);
+  EEPROM_readAnything(opentimeLoc, opentime);
+  EEPROM_readAnything(closeCountLoc, closeCount);
+  EEPROM_readAnything(openCountLoc, openCount);
+  Serial.begin(9600);
+  Serial.print("System has been up for "); Serial.print(uptime); Serial.println(" heures.");
+  Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" heures.");
+  Serial.print("The system has counted "); Serial.print(openCount); Serial.println(" valve openings.");
+  Serial.print("The system has counted "); Serial.print(closeCount); Serial.println(" valve closings.");
+  Serial.end();
 
   nodeStart();
 
@@ -194,7 +220,14 @@ void nodeFilling() {
     errorBeep();
     buttonClear();
   }
-  del(100);
+  del(1000);
+  
+  //STATS
+  opentimeCheck++;
+  if(opentimeCheck >= 3600){
+    incrementOpentime();
+    opentimeCheck = 0;
+  }
 }
 
 //STATE 4, done filling, tank full event detected, closing the valve
@@ -303,6 +336,13 @@ void del(unsigned long ms) {
     //put monitoring code here
     showLed();
     getButtonState();
+
+    //update stats
+    if (currentMillis > (uptimeCheck + 1000 * 60 * 60)) {
+      incrementUptime();
+      uptimeCheck = currentMillis;
+    }
+
     //check for overflow
     if (tankOverfullWarning()) {
       buttonClear();
@@ -319,7 +359,7 @@ void del(unsigned long ms) {
         delay(200); showLed(); getButtonState();
         if (buttonPressed()) {
           ledSet(1, 1, 2, 2);
-          while(tankOverfullWarning()){ //wait for overflow condition to go away
+          while (tankOverfullWarning()) { //wait for overflow condition to go away
             showLed();
             delay(100);
           }
@@ -345,6 +385,7 @@ void openValve() {
   digitalWrite(motorOpenPin, HIGH);
   del(openingTime);
   digitalWrite(motorOpenPin, LOW);
+  incrementOpenCount();
 }
 
 void closeValve() {
@@ -356,6 +397,7 @@ void closeValve() {
   digitalWrite(motorClosePin, HIGH);
   del(closingTime);
   digitalWrite(motorClosePin, LOW);
+  incrementCloseCount();
 }
 
 void emergencyCloseValve() {
@@ -482,4 +524,33 @@ boolean tankFull() {
 //retun true if overfill sensor triggered
 boolean tankOverfullWarning() {
   return digitalRead(warningFloaterPin) == LOW; //inverted floater
+}
+
+//EEPROM///
+void incrementUptime() {
+  unsigned long uptime;
+  EEPROM_readAnything(uptimeLoc, uptime);
+  uptime++;
+  EEPROM_writeAnything(uptimeLoc, uptime);
+}
+
+void incrementOpentime() {
+  unsigned long opentime;
+  EEPROM_readAnything(opentimeLoc, opentime);
+  opentime++;
+  EEPROM_readAnything(opentimeLoc, opentime);
+}
+
+void incrementCloseCount() {
+  unsigned int closeCount;
+  EEPROM_readAnything(closeCountLoc, closeCount);
+  closeCount++;
+  EEPROM_writeAnything(closeCountLoc, closeCount);
+}
+
+void incrementOpenCount() {
+  unsigned int openCount;
+  EEPROM_readAnything(openCountLoc, openCount);
+  openCount++;
+  EEPROM_writeAnything(openCountLoc, openCount);
 }
