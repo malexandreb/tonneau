@@ -71,7 +71,7 @@ void setup() {
 
   //read and display values in eeprom
   unsigned long uptime, opentime;
-  int openCount, closeCount;
+  unsigned int openCount, closeCount;
 
   EEPROM_readAnything(uptimeLoc, uptime);
   EEPROM_readAnything(opentimeLoc, opentime);
@@ -337,8 +337,8 @@ void del(unsigned long ms) {
     showLed();
     getButtonState();
 
-    //update stats
-    if (currentMillis > (uptimeCheck + 1000 * 60 * 60)) {
+    //update stats (with overflow protection)
+    if ((unsigned long)(currentMillis - uptimeCheck) >= (1000 * 60 * 60)) {
       incrementUptime();
       uptimeCheck = currentMillis;
     }
@@ -538,7 +538,7 @@ void incrementOpentime() {
   unsigned long opentime;
   EEPROM_readAnything(opentimeLoc, opentime);
   opentime++;
-  EEPROM_readAnything(opentimeLoc, opentime);
+  EEPROM_writeAnything(opentimeLoc, opentime);
 }
 
 void incrementCloseCount() {
