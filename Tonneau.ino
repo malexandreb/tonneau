@@ -70,16 +70,23 @@ void setup() {
   pinMode(buzzerPin, OUTPUT);
 
   //read and display values in eeprom
-  unsigned long uptime, opentime;
-  unsigned int openCount, closeCount;
+  unsigned long uptime, opentime;     //ulong is 32bits/4bytes (max 4'294'967'295) //uint  is 16bits/2bytes (max 65535)
+  unsigned long openCount, closeCount; 
+
+  //uncomment this section to initialize counters to zero
+//  unsigned long zero = 0;
+//  EEPROM_writeAnything(uptimeLoc, zero);
+//  EEPROM_writeAnything(opentimeLoc, zero);
+//  EEPROM_writeAnything(closeCountLoc, zero);
+//  EEPROM_writeAnything(openCountLoc, zero);
 
   EEPROM_readAnything(uptimeLoc, uptime);
   EEPROM_readAnything(opentimeLoc, opentime);
   EEPROM_readAnything(closeCountLoc, closeCount);
   EEPROM_readAnything(openCountLoc, openCount);
   Serial.begin(9600);
-  Serial.print("System has been up for "); Serial.print(uptime); Serial.println(" heures.");
-  Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" heures.");
+  Serial.print("System has been up for "); Serial.print(uptime); Serial.println(" hours.");
+  Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" hours.");
   Serial.print("The system has counted "); Serial.print(openCount); Serial.println(" valve openings.");
   Serial.print("The system has counted "); Serial.print(closeCount); Serial.println(" valve closings.");
   Serial.end();
@@ -528,29 +535,25 @@ boolean tankOverfullWarning() {
 
 //EEPROM///
 void incrementUptime() {
-  unsigned long uptime;
-  EEPROM_readAnything(uptimeLoc, uptime);
-  uptime++;
-  EEPROM_writeAnything(uptimeLoc, uptime);
+  incrementEEPROM(uptimeLoc);
 }
 
 void incrementOpentime() {
-  unsigned long opentime;
-  EEPROM_readAnything(opentimeLoc, opentime);
-  opentime++;
-  EEPROM_writeAnything(opentimeLoc, opentime);
+  incrementEEPROM(opentimeLoc);
 }
 
 void incrementCloseCount() {
-  unsigned int closeCount;
-  EEPROM_readAnything(closeCountLoc, closeCount);
-  closeCount++;
-  EEPROM_writeAnything(closeCountLoc, closeCount);
+  incrementEEPROM(closeCountLoc);
 }
 
 void incrementOpenCount() {
-  unsigned int openCount;
-  EEPROM_readAnything(openCountLoc, openCount);
-  openCount++;
-  EEPROM_writeAnything(openCountLoc, openCount);
+  incrementEEPROM(openCountLoc);
+}
+
+//increment an unsigned long in eeprom at given location.
+void incrementEEPROM(int location){
+  unsigned long value;
+  EEPROM_readAnything(location, value);
+  value++;
+  EEPROM_writeAnything(location, value);
 }
