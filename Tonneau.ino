@@ -23,6 +23,7 @@
 int cooldownDelay = 60 * 60 * 4; // in sec, triggers automatically at most every 4h (defined in seconds)
 int openingTime = 5500; //in ms
 int closingTime = 5800; //in ms
+boolean debug = false;
 
 //pin definition
 ////////////////
@@ -46,6 +47,7 @@ unsigned int buttonState[] = {0, 0, 0}; // 0 = no press, 1=pressed
 unsigned int floaterState[] = {1, 0}; //1=water, 0=no water
 int mooreState;
 int cooldownTimer;
+int lastState;
 
 //stat keeping
 int uptimeLoc = 0;
@@ -71,25 +73,28 @@ void setup() {
 
   //read and display values in eeprom
   unsigned long uptime, opentime;     //ulong is 32bits/4bytes (max 4'294'967'295) //uint  is 16bits/2bytes (max 65535)
-  unsigned long openCount, closeCount; 
+  unsigned long openCount, closeCount;
 
   //uncomment this section to initialize counters to zero
-//  unsigned long zero = 0;
-//  EEPROM_writeAnything(uptimeLoc, zero);
-//  EEPROM_writeAnything(opentimeLoc, zero);
-//  EEPROM_writeAnything(closeCountLoc, zero);
-//  EEPROM_writeAnything(openCountLoc, zero);
+  //  unsigned long zero = 0;
+  //  EEPROM_writeAnything(uptimeLoc, zero);
+  //  EEPROM_writeAnything(opentimeLoc, zero);
+  //  EEPROM_writeAnything(closeCountLoc, zero);
+  //  EEPROM_writeAnything(openCountLoc, zero);
 
   EEPROM_readAnything(uptimeLoc, uptime);
   EEPROM_readAnything(opentimeLoc, opentime);
   EEPROM_readAnything(closeCountLoc, closeCount);
   EEPROM_readAnything(openCountLoc, openCount);
   Serial.begin(9600);
+  Serial.println();
   Serial.print("System has been up for "); Serial.print(uptime); Serial.println(" hours.");
   Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" hours.");
   Serial.print("The system has counted "); Serial.print(openCount); Serial.println(" valve openings.");
   Serial.print("The system has counted "); Serial.print(closeCount); Serial.println(" valve closings.");
-  Serial.end();
+  if (!debug) {
+    Serial.end();
+  }
 
   nodeStart();
 
@@ -116,6 +121,13 @@ void loop() {
         errorBeep();
         del(5000);
       }
+  }
+
+  if (debug) {
+    if (lastState != mooreState) {
+      Serial.print("Entering State "); Serial.println(mooreState);
+      lastState = mooreState;
+    }
   }
   //buttonClear(); not a good idea
 }
@@ -228,10 +240,10 @@ void nodeFilling() {
     buttonClear();
   }
   del(1000);
-  
+
   //STATS
   opentimeCheck++;
-  if(opentimeCheck >= 3600){
+  if (opentimeCheck >= 3600) {
     incrementOpentime();
     opentimeCheck = 0;
   }
@@ -345,7 +357,8 @@ void del(unsigned long ms) {
     getButtonState();
 
     //update stats (with overflow protection)
-    if ((unsigned long)(currentMillis - uptimeCheck) >= (1000 * 60 * 60)) {
+    unsigned long oneHour = 1000L * 60 * 60; // the L instucts the compiler to use 32bit signed int instead of 16 ...
+    if ((unsigned long)(currentMillis - uptimeCheck) >= oneHour) {
       incrementUptime();
       uptimeCheck = currentMillis;
     }
@@ -551,9 +564,20 @@ void incrementOpenCount() {
 }
 
 //increment an unsigned long in eeprom at given location.
-void incrementEEPROM(int location){
+void incrementEEPROM(int location) {
+  if (debug)
+    Serial.println(); Serial.print("incrementing eeprom location "); Serial.println(location);
+
   unsigned long value;
   EEPROM_readAnything(location, value);
+  if (debug)
+    Serial.print("Found Value "); Serial.println(value);
   value++;
   EEPROM_writeAnything(location, value);
+
+  if (debug) {
+    value = 1337;
+    EEPROM_readAnything(location, value);
+    Serial.print("New Value "); Serial.println(value);
+  }
 }
