@@ -23,7 +23,9 @@
 int cooldownDelay = 60 * 60 * 4; // in sec, triggers automatically at most every 4h (defined in seconds)
 int openingTime = 5500; //in ms
 int closingTime = 5800; //in ms
-boolean debug = false;
+boolean debug = true;
+int inputThreshold = 8; //how many consecutive reads to raise water level flag.
+int maxOpenTime = 3600 / 4; //in seconds (15min)
 
 //pin definition
 ////////////////
@@ -48,14 +50,17 @@ unsigned int floaterState[] = {1, 0}; //1=water, 0=no water
 int mooreState;
 int cooldownTimer;
 int lastState;
+int warnLevelCount = 0;
+int fillLevelCount = 0;
 
 //stat keeping
-int uptimeLoc = 0;
-int opentimeLoc = 32;
-int openCountLoc = 64;
-int closeCountLoc = 72;
+int uptimeLoc = 100;
+int opentimeLoc = 132;
+int openCountLoc = 164;
+int closeCountLoc = 192;
 unsigned long uptimeCheck = 0;
-unsigned long opentimeCheck = 0;
+unsigned long openTimeCheck = 0;
+unsigned long openTimeStamp = 0;
 
 void setup() {
   pinMode(levelFloaterPin, INPUT_PULLUP);
@@ -76,22 +81,23 @@ void setup() {
   unsigned long openCount, closeCount;
 
   //uncomment this section to initialize counters to zero
-  //  unsigned long zero = 0;
-  //  EEPROM_writeAnything(uptimeLoc, zero);
-  //  EEPROM_writeAnything(opentimeLoc, zero);
-  //  EEPROM_writeAnything(closeCountLoc, zero);
-  //  EEPROM_writeAnything(openCountLoc, zero);
+//      unsigned long zero = 0;
+//      EEPROM_writeAnything(uptimeLoc, zero);
+//      EEPROM_writeAnything(opentimeLoc, zero);
+//      EEPROM_writeAnything(closeCountLoc, zero);
+//      EEPROM_writeAnything(openCountLoc, zero);
 
   EEPROM_readAnything(uptimeLoc, uptime);
   EEPROM_readAnything(opentimeLoc, opentime);
   EEPROM_readAnything(closeCountLoc, closeCount);
   EEPROM_readAnything(openCountLoc, openCount);
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println();
   Serial.print("System has been up for "); Serial.print(uptime); Serial.println(" hours.");
-  Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" hours.");
+  Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" seconds.");
   Serial.print("The system has counted "); Serial.print(openCount); Serial.println(" valve openings.");
   Serial.print("The system has counted "); Serial.print(closeCount); Serial.println(" valve closings.");
+  Serial.println("Discrepencies between open count and close count probably result from emergency overfill closes");
   if (!debug) {
     Serial.end();
   }
@@ -215,6 +221,10 @@ void nodeOpenValve() {
   del(10000); // wait for 10 sec for things to stabilize
   openValve();
   mooreState = 3; //go to state 3 after valve is opened
+  openTimeCheck = 0;
+  if (buttonPressed()) {
+    errorBeep();
+  }
   buttonClear();
 }
 
@@ -242,10 +252,10 @@ void nodeFilling() {
   del(1000);
 
   //STATS
-  opentimeCheck++;
-  if (opentimeCheck >= 3600) {
-    incrementOpentime();
-    opentimeCheck = 0;
+  openTimeCheck++;
+  if (openTimeCheck >= maxOpenTime) {
+    mooreState = 4; //close the valve automatically after a given interval for safety.
+    openTimeCheck = 0;
   }
 }
 
@@ -290,11 +300,27 @@ void nodeDisabled() {
       buttonClear();
       return;
     }
-    //disable does nothing here
-    errorBeep();
-    buttonClear();
+    //disable returns to idle state
+    if (buttonDisable()) {
+      mooreState = 0;
+      buttonClear();
+      return;
+    }
   }
   del(1000);
+
+  bool debugFloaters = false;
+  while(debugFloaters){
+    delay(1000);
+  if (digitalRead(levelFloaterPin) == HIGH)
+    if (digitalRead(warningFloaterPin) == LOW)
+      Serial.println("overfull ");
+    else
+      Serial.println("full ");
+  else if (digitalRead(warningFloaterPin) == LOW)
+    Serial.println("Overfull and full sensor not working!");
+  }
+
 }
 
 //STATE 8, partial open of the valve to give a little bit of water during tank maintenance
@@ -355,16 +381,18 @@ void del(unsigned long ms) {
     //put monitoring code here
     showLed();
     getButtonState();
+    checkInputStatus();
 
     //update stats (with overflow protection)
-    unsigned long oneHour = 1000L * 60 * 60; // the L instucts the compiler to use 32bit signed int instead of 16 ...
-    if ((unsigned long)(currentMillis - uptimeCheck) >= oneHour) {
+    unsigned long tenHour = 1000L * 60 * 60 * 10; // the L instucts the compiler to use 32bit signed int instead of 16 ...
+    if ((unsigned long)(currentMillis - uptimeCheck) >= tenHour) {
       incrementUptime();
       uptimeCheck = currentMillis;
     }
 
     //check for overflow
     if (tankOverfullWarning()) {
+      Serial.println("Entering Overfull Emergency warning state");
       buttonClear();
       emergencyCloseValve();
       ledSet(1, 1, 0, 2);
@@ -378,11 +406,14 @@ void del(unsigned long ms) {
         digitalWrite(buzzerPin, LOW);
         delay(200); showLed(); getButtonState();
         if (buttonPressed()) {
+          Serial.println("Entering silent alarm state, waiting for tank to drain");
           ledSet(1, 1, 2, 2);
           while (tankOverfullWarning()) { //wait for overflow condition to go away
             showLed();
             delay(100);
+            checkInputStatus();
           }
+          Serial.println("Overfull situation clear, resetting system to resum normal operations");
           buttonClear();
           mooreState = 0;
           resetFunc();
@@ -406,6 +437,7 @@ void openValve() {
   del(openingTime);
   digitalWrite(motorOpenPin, LOW);
   incrementOpenCount();
+  openTimeStamp = millis();
 }
 
 void closeValve() {
@@ -418,6 +450,11 @@ void closeValve() {
   del(closingTime);
   digitalWrite(motorClosePin, LOW);
   incrementCloseCount();
+  //calculate how long the valve has been open and add it to the total in seconds
+  unsigned int openDuration = millis() - openTimeStamp;
+  openDuration = openDuration / 1000; //convert to seconds
+  if (openDuration < maxOpenTime + 60)
+    incrementOpenTime(openDuration);
 }
 
 void emergencyCloseValve() {
@@ -536,23 +573,37 @@ void actionBeep() {
 //floaters//
 ////////////
 
+void checkInputStatus() {
+  if (digitalRead(levelFloaterPin) == HIGH)
+    fillLevelCount = fillLevelCount > 16355 ? fillLevelCount : fillLevelCount+1;
+  else
+    fillLevelCount /= 2;
+
+  if (digitalRead(warningFloaterPin) == LOW)
+    warnLevelCount++;
+  else
+    warnLevelCount /= 2;
+}
+
 //return true if the tank is detected as full
 boolean tankFull() {
-  return digitalRead(levelFloaterPin) == HIGH;
+  //Serial.println(fillLevelCount);
+  //Serial.println(fillLevelCount > inputThreshold);
+  return fillLevelCount > inputThreshold; 
 }
 
 //retun true if overfill sensor triggered
 boolean tankOverfullWarning() {
-  return digitalRead(warningFloaterPin) == LOW; //inverted floater
+  return warnLevelCount > inputThreshold;
 }
 
 //EEPROM///
 void incrementUptime() {
-  incrementEEPROM(uptimeLoc);
+  incrementEEPROM(uptimeLoc, 10);
 }
 
-void incrementOpentime() {
-  incrementEEPROM(opentimeLoc);
+void incrementOpenTime(int increment) {
+  incrementEEPROM(opentimeLoc, increment);
 }
 
 void incrementCloseCount() {
@@ -563,8 +614,13 @@ void incrementOpenCount() {
   incrementEEPROM(openCountLoc);
 }
 
-//increment an unsigned long in eeprom at given location.
+//increment eeprom location by 1
 void incrementEEPROM(int location) {
+  incrementEEPROM(location, 1);
+}
+
+//increment an unsigned long in eeprom at given location by given value.
+void incrementEEPROM(int location, int increment) {
   if (debug)
     Serial.println(); Serial.print("incrementing eeprom location "); Serial.println(location);
 
@@ -572,7 +628,8 @@ void incrementEEPROM(int location) {
   EEPROM_readAnything(location, value);
   if (debug)
     Serial.print("Found Value "); Serial.println(value);
-  value++;
+  value += increment;
+
   EEPROM_writeAnything(location, value);
 
   if (debug) {
