@@ -81,11 +81,11 @@ void setup() {
   unsigned long openCount, closeCount;
 
   //uncomment this section to initialize counters to zero
-//      unsigned long zero = 0;
-//      EEPROM_writeAnything(uptimeLoc, zero);
-//      EEPROM_writeAnything(opentimeLoc, zero);
-//      EEPROM_writeAnything(closeCountLoc, zero);
-//      EEPROM_writeAnything(openCountLoc, zero);
+  //      unsigned long zero = 0;
+  //      EEPROM_writeAnything(uptimeLoc, zero);
+  //      EEPROM_writeAnything(opentimeLoc, zero);
+  //      EEPROM_writeAnything(closeCountLoc, zero);
+  //      EEPROM_writeAnything(openCountLoc, zero);
 
   EEPROM_readAnything(uptimeLoc, uptime);
   EEPROM_readAnything(opentimeLoc, opentime);
@@ -97,7 +97,7 @@ void setup() {
   Serial.print("During that time, the valve has been open for "); Serial.print(opentime); Serial.println(" seconds.");
   Serial.print("The system has counted "); Serial.print(openCount); Serial.println(" valve openings.");
   Serial.print("The system has counted "); Serial.print(closeCount); Serial.println(" valve closings.");
-  Serial.println("Discrepencies between open count and close count probably result from emergency overfill closes");
+  Serial.println("Discrepancies between open count and close count probably result from emergency overfill closes");
   if (!debug) {
     Serial.end();
   }
@@ -310,15 +310,15 @@ void nodeDisabled() {
   del(1000);
 
   bool debugFloaters = false;
-  while(debugFloaters){
+  while (debugFloaters) {
     delay(1000);
-  if (digitalRead(levelFloaterPin) == HIGH)
-    if (digitalRead(warningFloaterPin) == LOW)
-      Serial.println("overfull ");
-    else
-      Serial.println("full ");
-  else if (digitalRead(warningFloaterPin) == LOW)
-    Serial.println("Overfull and full sensor not working!");
+    if (digitalRead(levelFloaterPin) == HIGH)
+      if (digitalRead(warningFloaterPin) == LOW)
+        Serial.println("overfull ");
+      else
+        Serial.println("full ");
+    else if (digitalRead(warningFloaterPin) == LOW)
+      Serial.println("Overfull and full sensor not working!");
   }
 
 }
@@ -451,7 +451,7 @@ void closeValve() {
   digitalWrite(motorClosePin, LOW);
   incrementCloseCount();
   //calculate how long the valve has been open and add it to the total in seconds
-  unsigned int openDuration = millis() - openTimeStamp;
+  unsigned long int openDuration = millis() - openTimeStamp;
   openDuration = openDuration / 1000; //convert to seconds
   if (openDuration < maxOpenTime + 60)
     incrementOpenTime(openDuration);
@@ -575,7 +575,7 @@ void actionBeep() {
 
 void checkInputStatus() {
   if (digitalRead(levelFloaterPin) == HIGH)
-    fillLevelCount = fillLevelCount > 16355 ? fillLevelCount : fillLevelCount+1;
+    fillLevelCount = fillLevelCount > 16355 ? fillLevelCount : fillLevelCount + 1;
   else
     fillLevelCount /= 2;
 
@@ -589,7 +589,7 @@ void checkInputStatus() {
 boolean tankFull() {
   //Serial.println(fillLevelCount);
   //Serial.println(fillLevelCount > inputThreshold);
-  return fillLevelCount > inputThreshold; 
+  return fillLevelCount > inputThreshold;
 }
 
 //retun true if overfill sensor triggered
@@ -621,13 +621,13 @@ void incrementEEPROM(int location) {
 
 //increment an unsigned long in eeprom at given location by given value.
 void incrementEEPROM(int location, int increment) {
-  if (debug)
-    Serial.println(); Serial.print("incrementing eeprom location "); Serial.println(location);
+  
+  Serial.println(); Serial.print("incrementing eeprom location "); Serial.println(location);
 
   unsigned long value;
   EEPROM_readAnything(location, value);
-  if (debug)
-    Serial.print("Found Value "); Serial.println(value);
+  Serial.print("Found Value "); Serial.println(value);
+  Serial.print("incrementing by  "); Serial.println(increment);
   value += increment;
 
   EEPROM_writeAnything(location, value);
