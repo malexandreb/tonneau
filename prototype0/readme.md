@@ -7,7 +7,7 @@ code updated during summer 2021 as a hotfix until permanent solution implemented
 
 ## system diagram
 
-![P_20210820_233332_2](https://user-images.githubusercontent.com/22455475/134207621-9ad257e4-536a-4326-adb3-d93636db9906.jpg)
+![Schematic](Schematic.jpg?raw=true "Prototype0 wiring diagram and peripheral")
 
 ## history
 
