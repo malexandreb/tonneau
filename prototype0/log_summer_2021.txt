@@ -1,0 +1,115 @@
+07:15:41.430 -> 
+07:15:41.430 -> System has been up for 0 hours.
+07:15:41.430 -> During that time, the valve has been open for 55 seconds.
+07:15:41.430 -> The system has counted 1 valve openings.
+07:15:41.430 -> The system has counted 1 valve closings.
+07:15:41.430 -> Discrepencies between open count and close count probably result from emergency overfill closes
+07:55:51.560 -> Entering State 7
+07:55:54.666 -> Entering State 1
+07:55:55.669 -> Entering State 2
+07:56:13.626 -> 
+07:56:13.626 -> incrementing eeprom location 164
+07:56:13.626 -> Found Value 1
+07:56:13.626 -> New Value 2
+07:56:13.727 -> Entering State 3
+07:59:42.675 -> Entering State 4
+08:00:00.953 -> 
+08:00:00.953 -> incrementing eeprom location 192
+08:00:00.953 -> Found Value 1
+08:00:00.953 -> New Value 2
+08:00:00.953 -> 
+08:00:00.953 -> incrementing eeprom location 132
+08:00:00.953 -> Found Value 55
+08:00:00.953 -> New Value 85
+08:00:00.953 -> Entering State 5
+08:00:00.953 -> Entering State 0
+11:59:59.669 -> Entering State 1
+12:00:00.671 -> Entering State 2
+12:00:18.612 -> 
+12:00:18.612 -> incrementing eeprom location 164
+12:00:18.612 -> Found Value 2
+12:00:18.612 -> New Value 3
+12:00:18.696 -> Entering State 3
+12:08:50.684 -> Entering State 4
+12:09:08.893 -> 
+12:09:08.893 -> incrementing eeprom location 192
+12:09:08.893 -> Found Value 2
+12:09:08.893 -> New Value 3
+12:09:08.893 -> 
+12:09:08.893 -> incrementing eeprom location 132
+12:09:08.893 -> Found Value 85
+12:09:08.946 -> New Value 91
+12:09:08.946 -> Entering State 5
+12:09:08.946 -> Entering State 0
+16:09:07.637 -> Entering State 1
+16:09:08.640 -> Entering State 2
+16:09:26.586 -> 
+16:09:26.586 -> incrementing eeprom location 164
+16:09:26.586 -> Found Value 3
+16:09:26.639 -> New Value 4
+16:09:26.739 -> Entering State 3
+16:13:58.662 -> Entering State 4
+16:14:16.912 -> 
+16:14:16.912 -> incrementing eeprom location 192
+16:14:16.912 -> Found Value 3
+16:14:16.966 -> New Value 4
+16:14:16.966 -> 
+16:14:16.966 -> incrementing eeprom location 132
+16:14:16.966 -> Found Value 91
+16:14:16.966 -> New Value 119
+16:14:16.966 -> Entering State 5
+16:14:16.966 -> Entering State 0
+
+19:13:48.471 -> 
+19:13:48.471 -> System has been up for 10 hours.
+19:13:48.471 -> During that time, the valve has been open for 119 seconds.
+19:13:48.518 -> The system has counted 4 valve openings.
+19:13:48.518 -> The system has counted 4 valve closings.
+19:13:48.518 -> Discrepencies between open count and close count probably result from emergency overfill closes
+19:35:05.739 -> Entering State 7
+19:35:07.823 -> Entering State 8
+19:35:16.738 -> 
+19:35:16.738 -> incrementing eeprom location 164
+19:35:16.785 -> Found Value 4
+19:35:16.785 -> incrementing by  1
+19:35:16.785 -> New Value 5
+19:35:16.785 -> Entering State 9
+19:35:35.002 -> 
+19:35:35.002 -> incrementing eeprom location 192
+19:35:35.002 -> Found Value 4
+19:35:35.002 -> incrementing by  1
+19:35:35.048 -> New Value 5
+19:35:35.048 -> 
+19:35:35.048 -> incrementing eeprom location 132
+19:35:35.048 -> Found Value 119
+19:35:35.048 -> incrementing by  18
+19:35:35.048 -> New Value 137
+19:35:35.048 -> Entering State 7
+19:38:48.147 -> Entering State 0
+19:38:50.238 -> Entering State 1
+19:38:51.215 -> Entering State 2
+19:39:09.185 -> 
+19:39:09.185 -> incrementing eeprom location 164
+19:39:09.185 -> Found Value 5
+19:39:09.185 -> incrementing by  1
+19:39:09.185 -> New Value 6
+19:39:09.277 -> Entering State 3
+19:42:11.285 -> Entering State 4
+19:42:29.494 -> 
+19:42:29.494 -> incrementing eeprom location 192
+19:42:29.494 -> Found Value 5
+19:42:29.494 -> incrementing by  1
+19:42:29.540 -> New Value 6
+19:42:29.540 -> 
+19:42:29.540 -> incrementing eeprom location 132
+19:42:29.540 -> Found Value 137
+19:42:29.540 -> incrementing by  200
+19:42:29.540 -> New Value 337
+19:42:29.540 -> Entering State 5
+19:42:29.540 -> Entering State 0
+
+19:45:42.074 -> System has been up for 10 hours.
+19:45:42.074 -> During that time, the valve has been open for 337 seconds.
+19:45:42.074 -> The system has counted 6 valve openings.
+19:45:42.074 -> The system has counted 6 valve closings.
+19:45:42.074 -> Discrepancies between open count and close count probably result from emergency overfill closes
